@@ -36,12 +36,24 @@ stepWidget v = case v of
   Free (StepBlock io next) -> io >>= stepWidget . next
   Free Forever             -> pure Nothing
 
-run :: Int -> HTML -> ConnectionOptions -> Middleware -> Widget HTML a -> IO ()
-run port index connectionOptions middleware widget
+run
+  :: Int
+  -> HTML
+  -> ConnectionOptions
+  -> Middleware
+  -> IO res
+  -> (res -> IO ())
+  -> (res -> Widget HTML a)
+  -> IO ()
+run port index connectionOptions middleware acquireRes releaseRes widget
   = W.run port
-  $ R.app index connectionOptions middleware (step widget) stepWidget
+  $ R.app index connectionOptions middleware acquireRes releaseRes (step . widget) stepWidget
 
-runDefault :: Int -> T.Text -> Widget HTML a -> IO ()
+runDefault
+  :: Int
+  -> T.Text
+  -> Widget HTML a
+  -> IO ()
 runDefault port title widget
   = W.run port
-  $ R.app (defaultIndex title []) defaultConnectionOptions id (step widget) stepWidget
+  $ R.app (defaultIndex title []) defaultConnectionOptions id (pure ()) (const $ pure ()) (const $ step widget) stepWidget
