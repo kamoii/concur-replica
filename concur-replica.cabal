@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 20c6f76b52cd574b5ba22a2edd6df971648c456041bbd3db22679b41f09b92db
+-- hash: 15c17f6e553eb499363b9695bb9fb38d9c945a621ddd3084d2d0d119753012a4
 
 name:           concur-replica
 version:        0.1.0.0
@@ -42,11 +42,13 @@ library
       aeson
     , base >=4.7 && <5
     , bytestring
+    , chronos
     , concur-core
     , containers
     , free >=4.12
     , replica
     , text
+    , torsor
     , transformers >=0.5
     , wai
     , wai-websockets
@@ -65,12 +67,14 @@ executable concur-replica-calc
       aeson
     , base >=4.7 && <5
     , bytestring
+    , chronos
     , concur-core
     , concur-replica
     , containers
     , free >=4.12
     , replica
     , text
+    , torsor
     , transformers >=0.5
     , wai
     , wai-websockets
@@ -89,6 +93,7 @@ executable concur-replica-hilo
       aeson
     , base >=4.7 && <5
     , bytestring
+    , chronos
     , concur-core
     , concur-replica
     , containers
@@ -96,6 +101,7 @@ executable concur-replica-hilo
     , random
     , replica
     , text
+    , torsor
     , transformers >=0.5
     , wai
     , wai-websockets
@@ -114,12 +120,14 @@ executable concur-replica-menu
       aeson
     , base >=4.7 && <5
     , bytestring
+    , chronos
     , concur-core
     , concur-replica
     , containers
     , free >=4.12
     , replica
     , text
+    , torsor
     , transformers >=0.5
     , wai
     , wai-websockets
@@ -138,12 +146,14 @@ executable concur-replica-misc
       aeson
     , base >=4.7 && <5
     , bytestring
+    , chronos
     , concur-core
     , concur-replica
     , containers
     , free >=4.12
     , replica
     , text
+    , torsor
     , transformers >=0.5
     , wai
     , wai-websockets
@@ -162,6 +172,7 @@ executable concur-replica-multi-entry
       aeson
     , base >=4.7 && <5
     , bytestring
+    , chronos
     , concur-core
     , concur-replica
     , containers
@@ -169,6 +180,7 @@ executable concur-replica-multi-entry
     , mtl
     , replica
     , text
+    , torsor
     , transformers >=0.5
     , wai
     , wai-websockets

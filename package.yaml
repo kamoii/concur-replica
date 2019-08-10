@@ -27,6 +27,8 @@ dependencies:
 - wai-websockets
 - websockets
 - warp
+- chronos
+- torsor
 library:
   source-dirs: src
   ghc-options:

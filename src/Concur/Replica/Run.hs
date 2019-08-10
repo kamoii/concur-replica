@@ -1,8 +1,15 @@
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ExistentialQuantification #-}
 module Concur.Replica.Run
-  ( run
+  ( Config(..)
+  , mkDefaultConfig
+  , mkDefaultConfig'
+  , run
   , runDefault
   ) where
 
+import qualified Torsor                          as Tr
+import qualified Chronos                         as Ch
 import           Concur.Core                     (SuspendF(StepView, StepIO, StepBlock, Forever), Widget, display, orr, step)
 
 import           Control.Monad.Free              (Free(Pure, Free))
@@ -36,24 +43,70 @@ stepWidget v = case v of
   Free (StepBlock io next) -> io >>= stepWidget . next
   Free Forever             -> pure Nothing
 
-run
+data Config = forall res a. Config
+  { cfgPort                    :: Int
+  , cfgTitle                   :: T.Text
+  , cfgHeader                  :: HTML
+  , cfgWSConnectionOptions     :: ConnectionOptions
+  , cfgMiddleware              :: Middleware
+  , cfgWSInitialConnectLimit   :: Ch.Timespan      -- ^ Time limit for first connect
+  , cfgWSReconnectionSpanLimit :: Ch.Timespan      -- ^ limit for re-connecting span
+  , cfgResourceAquire          :: IO res
+  , cfgResourceRelease         :: res -> IO ()
+  , cfgInitial                 :: res -> Widget HTML a
+  }
+
+mkDefaultConfig'
   :: Int
-  -> HTML
-  -> ConnectionOptions
-  -> Middleware
+  -> T.Text
   -> IO res
   -> (res -> IO ())
   -> (res -> Widget HTML a)
-  -> IO ()
-run port index connectionOptions middleware acquireRes releaseRes widget
-  = W.run port
-  $ R.app index connectionOptions middleware acquireRes releaseRes (step . widget) stepWidget
+  -> Config
+mkDefaultConfig' port title resourceAquire resourceRelease initial =
+  Config
+  { cfgPort                    = port
+  , cfgTitle                   = title
+  , cfgHeader                  = mempty
+  , cfgWSConnectionOptions     = defaultConnectionOptions
+  , cfgMiddleware              = id
+  , cfgWSInitialConnectLimit   = 5 `Tr.scale` Ch.second
+  , cfgWSReconnectionSpanLimit = 10 `Tr.scale` Ch.second
+  , cfgResourceAquire          = resourceAquire
+  , cfgResourceRelease         = resourceRelease
+  , cfgInitial                 = initial
+  }
+
+mkDefaultConfig
+  :: Int
+  -> T.Text
+  -> Widget HTML a
+  -> Config
+mkDefaultConfig port title initial' =
+  mkDefaultConfig' port title (pure ()) (const $ pure ()) (const initial')
+
+run :: Config -> IO ()
+run cfg = R.app (acfg cfg) (rcfg cfg) (W.run (cfgPort cfg))
+  where
+    acfg Config{..} = R.AppConfig
+      { acfgTitle                    = cfgTitle
+      , acfgHeader                   = cfgHeader
+      , acfgWSConnectionOptions      = cfgWSConnectionOptions
+      , acfgMiddleware               = cfgMiddleware
+      }
+    rcfg Config{..} = R.ReplicaAppConfig
+      { rcfgWSInitialConnectLimit    = cfgWSInitialConnectLimit
+      , rcfgWSReconnectionSpanLimit  = cfgWSReconnectionSpanLimit
+      , rcfgResourceAquire           = cfgResourceAquire
+      , rcfgResourceRelease          = cfgResourceRelease
+      , rcfgInitial                  = step . cfgInitial
+      , rcfgStep                     = stepWidget
+      }
 
 runDefault
   :: Int
   -> T.Text
   -> Widget HTML a
   -> IO ()
-runDefault port title widget
-  = W.run port
-  $ R.app (defaultIndex title []) defaultConnectionOptions id (pure ()) (const $ pure ()) (const $ step widget) stepWidget
+runDefault port title initial' =
+  run $ mkDefaultConfig port title initial'
