@@ -8,6 +8,7 @@ module Concur.Replica.Run
   , runDefault
   ) where
 
+import qualified Colog                           as Co
 import qualified Torsor                          as Tr
 import qualified Chronos                         as Ch
 import           Concur.Core                     (SuspendF(StepView, StepIO, StepBlock, Forever), Widget, display, orr, step)
@@ -49,6 +50,7 @@ data Config = forall res a. Config
   , cfgHeader                  :: HTML
   , cfgWSConnectionOptions     :: ConnectionOptions
   , cfgMiddleware              :: Middleware
+  , cfgLogAction               :: Co.LogAction IO R.ReplicaLog
   , cfgWSInitialConnectLimit   :: Ch.Timespan      -- ^ Time limit for first connect
   , cfgWSReconnectionSpanLimit :: Ch.Timespan      -- ^ limit for re-connecting span
   , cfgResourceAquire          :: IO res
@@ -70,6 +72,7 @@ mkDefaultConfig' port title resourceAquire resourceRelease initial =
   , cfgHeader                  = mempty
   , cfgWSConnectionOptions     = defaultConnectionOptions
   , cfgMiddleware              = id
+  , cfgLogAction               = Co.cmap R.rlogToText Co.logTextStdout
   , cfgWSInitialConnectLimit   = 5 `Tr.scale` Ch.second
   , cfgWSReconnectionSpanLimit = 10 `Tr.scale` Ch.second
   , cfgResourceAquire          = resourceAquire
@@ -95,7 +98,8 @@ run cfg = R.app (acfg cfg) (rcfg cfg) (W.run (cfgPort cfg))
       , acfgMiddleware               = cfgMiddleware
       }
     rcfg Config{..} = R.ReplicaAppConfig
-      { rcfgWSInitialConnectLimit    = cfgWSInitialConnectLimit
+      { rcfgLogAction                = cfgLogAction
+      , rcfgWSInitialConnectLimit    = cfgWSInitialConnectLimit
       , rcfgWSReconnectionSpanLimit  = cfgWSReconnectionSpanLimit
       , rcfgResourceAquire           = cfgResourceAquire
       , rcfgResourceRelease          = cfgResourceRelease

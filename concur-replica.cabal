@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 15c17f6e553eb499363b9695bb9fb38d9c945a621ddd3084d2d0d119753012a4
+-- hash: 47d2ae940385e85577748f7c3acffbebbb68c64e3200692c395c1b15101c3b3b
 
 name:           concur-replica
 version:        0.1.0.0
@@ -43,6 +43,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , chronos
+    , co-log
     , concur-core
     , containers
     , free >=4.12
@@ -68,6 +69,7 @@ executable concur-replica-calc
     , base >=4.7 && <5
     , bytestring
     , chronos
+    , co-log
     , concur-core
     , concur-replica
     , containers
@@ -94,6 +96,7 @@ executable concur-replica-hilo
     , base >=4.7 && <5
     , bytestring
     , chronos
+    , co-log
     , concur-core
     , concur-replica
     , containers
@@ -121,6 +124,7 @@ executable concur-replica-menu
     , base >=4.7 && <5
     , bytestring
     , chronos
+    , co-log
     , concur-core
     , concur-replica
     , containers
@@ -147,6 +151,7 @@ executable concur-replica-misc
     , base >=4.7 && <5
     , bytestring
     , chronos
+    , co-log
     , concur-core
     , concur-replica
     , containers
@@ -173,6 +178,7 @@ executable concur-replica-multi-entry
     , base >=4.7 && <5
     , bytestring
     , chronos
+    , co-log
     , concur-core
     , concur-replica
     , containers

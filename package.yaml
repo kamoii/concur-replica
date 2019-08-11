@@ -29,6 +29,7 @@ dependencies:
 - warp
 - chronos
 - torsor
+- co-log
 library:
   source-dirs: src
   ghc-options:
