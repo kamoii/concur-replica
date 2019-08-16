@@ -32,7 +32,7 @@ import           Network.WebSockets.Connection   (ConnectionOptions, defaultConn
 import           Network.Wai                     (Middleware)
 import qualified Network.Wai.Handler.Replica     as R
 import qualified Network.Wai.Handler.Warp        as W
-import qualified Replica.Run.Log                 as R
+import qualified Replica.Run.Log                 as L
 import qualified Replica.Run.Types               as R
 
 import           Debug.Trace
@@ -51,7 +51,7 @@ data Config res = Config
   , cfgHeader                  :: HTML
   , cfgWSConnectionOptions     :: ConnectionOptions
   , cfgMiddleware              :: Middleware
-  , cfgLogAction               :: Co.LogAction IO R.Log
+  , cfgLogAction               :: Co.LogAction IO L.Log
   , cfgWSInitialConnectLimit   :: Ch.Timespan      -- ^ Time limit for first connect
   , cfgWSReconnectionSpanLimit :: Ch.Timespan      -- ^ limit for re-connecting span
   , cfgResourceAquire          :: IO res
@@ -71,7 +71,7 @@ mkDefaultConfig' port title resourceAquire resourceRelease =
   , cfgHeader                  = mempty
   , cfgWSConnectionOptions     = defaultConnectionOptions
   , cfgMiddleware              = id
-  , cfgLogAction               = Co.cmap R.rlogToText Co.logTextStdout
+  , cfgLogAction               = Co.cmapM L.tag $ Co.cmap L.format Co.logTextStdout
   , cfgWSInitialConnectLimit   = 15 `Tr.scale` Ch.second
   , cfgWSReconnectionSpanLimit = 5 `Tr.scale` Ch.minute
   , cfgResourceAquire          = resourceAquire
