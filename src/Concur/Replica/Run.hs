@@ -73,7 +73,7 @@ mkDefaultConfig' port title resourceAquire resourceRelease =
   , cfgMiddleware              = id
   , cfgLogAction               = Co.cmap R.rlogToText Co.logTextStdout
   , cfgWSInitialConnectLimit   = 15 `Tr.scale` Ch.second
-  , cfgWSReconnectionSpanLimit = 60 `Tr.scale` Ch.second
+  , cfgWSReconnectionSpanLimit = 5 `Tr.scale` Ch.minute
   , cfgResourceAquire          = resourceAquire
   , cfgResourceRelease         = resourceRelease
   }
