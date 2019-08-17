@@ -1,4 +1,6 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Concur.Replica.Run
   ( Config(..)
   , mkDefaultConfig
@@ -8,9 +10,11 @@ module Concur.Replica.Run
   ) where
 
 import qualified Colog                           as Co
+import           Colog                           ((<&))
 import qualified Torsor                          as Tr
 import qualified Chronos                         as Ch
 import           Concur.Core                     (SuspendF(StepView, StepIO, StepBlock, Forever), Widget, display, orr, step)
+import qualified Concur.Replica.Log              as L
 
 import           Control.Monad.Free              (Free(Pure, Free))
 
@@ -32,7 +36,6 @@ import           Network.WebSockets.Connection   (ConnectionOptions, defaultConn
 import           Network.Wai                     (Middleware)
 import qualified Network.Wai.Handler.Replica     as R
 import qualified Network.Wai.Handler.Warp        as W
-import qualified Replica.Run.Log                 as L
 import qualified Replica.Run.Types               as R
 
 import           Debug.Trace
@@ -51,7 +54,7 @@ data Config res = Config
   , cfgHeader                  :: HTML
   , cfgWSConnectionOptions     :: ConnectionOptions
   , cfgMiddleware              :: Middleware
-  , cfgLogAction               :: Co.LogAction IO L.Log
+  , cfgLogAction               :: Co.LogAction IO (Ch.Time, L.Log)
   , cfgWSInitialConnectLimit   :: Ch.Timespan      -- ^ Time limit for first connect
   , cfgWSReconnectionSpanLimit :: Ch.Timespan      -- ^ limit for re-connecting span
   , cfgResourceAquire          :: IO res
@@ -71,7 +74,7 @@ mkDefaultConfig' port title resourceAquire resourceRelease =
   , cfgHeader                  = mempty
   , cfgWSConnectionOptions     = defaultConnectionOptions
   , cfgMiddleware              = id
-  , cfgLogAction               = Co.cmapM L.tag $ Co.cmap L.format Co.logTextStdout
+  , cfgLogAction               = Co.cmap L.format Co.logTextStdout
   , cfgWSInitialConnectLimit   = 15 `Tr.scale` Ch.second
   , cfgWSReconnectionSpanLimit = 5 `Tr.scale` Ch.minute
   , cfgResourceAquire          = resourceAquire
@@ -86,14 +89,19 @@ mkDefaultConfig port title =
   mkDefaultConfig' port title (pure ()) (const $ pure ())
 
 run :: Config res -> (res -> Widget HTML a) -> IO ()
-run cfg initial = R.app (rcfg cfg) (W.run (cfgPort cfg))
+run cfg@Config{cfgPort, cfgLogAction} initial = R.app (rcfg cfg) $ \app -> do
+  greetLog <& terminalLogo <> "\nListening port=" <> T.pack (show cfgPort)
+  W.run cfgPort app
   where
+    tagTime a = (,) <$> Ch.now <*> pure a
+    greetLog = Co.cmap L.Greeting $ Co.cmapM tagTime cfgLogAction
+
     rcfg Config{..} = R.Config
       { R.cfgTitle                    = cfgTitle
       , R.cfgHeader                   = cfgHeader
       , R.cfgWSConnectionOptions      = cfgWSConnectionOptions
       , R.cfgMiddleware               = cfgMiddleware
-      , R.cfgLogAction                = cfgLogAction
+      , R.cfgLogAction                = Co.cmap (fmap L.ReplicaLog) cfgLogAction
       , R.cfgWSInitialConnectLimit    = cfgWSInitialConnectLimit
       , R.cfgWSReconnectionSpanLimit  = cfgWSReconnectionSpanLimit
       , R.cfgResourceAquire           = cfgResourceAquire
@@ -101,6 +109,16 @@ run cfg initial = R.app (rcfg cfg) (W.run (cfgPort cfg))
       , R.cfgInitial                  = step . initial
       , R.cfgStep                     = stepWidget
       }
+
+    -- created by `figlet`
+    terminalLogo = id
+      $ "                                                           _ _\n"
+      <> "        ___ ___  _ __   ___ _   _ _ __      _ __ ___ _ __ | (_) ___ __ _\n"
+      <> "       / __/ _ \\| '_ \\ / __| | | | '__|____| '__/ _ \\ '_ \\| | |/ __/ _` |\n"
+      <> "      | (_| (_) | | | | (__| |_| | | |_____| | |  __/ |_) | | | (_| (_| |\n"
+      <> "       \\___\\___/|_| |_|\\___|\\__,_|_|       |_|  \\___| .__/|_|_|\\___\\__,_|\n"
+      <> "                                                    |_|\n"
+
 
 runDefault
   :: Int
