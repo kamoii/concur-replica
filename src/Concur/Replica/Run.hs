@@ -36,6 +36,7 @@ import           Network.WebSockets.Connection   (ConnectionOptions, defaultConn
 import           Network.Wai                     (Middleware)
 import qualified Network.Wai.Handler.Replica     as R
 import qualified Network.Wai.Handler.Warp        as W
+import qualified Network.Wai.Middleware.Logging  as ML
 import qualified Replica.Run.Types               as R
 
 import           Debug.Trace
@@ -95,12 +96,16 @@ run cfg@Config{cfgPort, cfgLogAction} initial = R.app (rcfg cfg) $ \app -> do
   where
     tagTime a = (,) <$> Ch.now <*> pure a
     greetLog = Co.cmap L.Greeting $ Co.cmapM tagTime cfgLogAction
+    waiLog   = Co.cmap L.WaiLog $ Co.cmapM tagTime cfgLogAction
 
+    -- Adding logging middleware in front.
+    -- TODO: Access log appears after "Session create" ... which is meh
+    -- TODO: WS access log doesn't apear since ws connection is processed before middlewares
     rcfg Config{..} = R.Config
       { R.cfgTitle                    = cfgTitle
       , R.cfgHeader                   = cfgHeader
       , R.cfgWSConnectionOptions      = cfgWSConnectionOptions
-      , R.cfgMiddleware               = cfgMiddleware
+      , R.cfgMiddleware               = cfgMiddleware . ML.loggingApacheLike (waiLog<&)
       , R.cfgLogAction                = Co.cmap (fmap L.ReplicaLog) cfgLogAction
       , R.cfgWSInitialConnectLimit    = cfgWSInitialConnectLimit
       , R.cfgWSReconnectionSpanLimit  = cfgWSReconnectionSpanLimit

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ee465de82155ffba7d653a04c71dcadd54fc468f05b88b2c4ec9455a127c097e
+-- hash: 353c4c56a47f7c9e9f1ce46ec3e4b6cec611dd840d3d8f38a0cf76fee5a008dc
 
 name:           concur-replica
 version:        0.1.0.0
@@ -32,9 +32,10 @@ library
       Concur.Replica.DOM
       Concur.Replica.Props
       Concur.Replica.Events
+      Concur.Replica.Log
       Concur.Replica.Run
   other-modules:
-      Concur.Replica.Log
+      Network.Wai.Middleware.Logging
       Paths_concur_replica
   hs-source-dirs:
       src
@@ -42,12 +43,15 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , byteorder
     , bytestring
     , chronos
     , co-log
     , concur-core
     , containers
     , free >=4.12
+    , http-types
+    , network
     , replica
     , text
     , torsor
@@ -68,6 +72,7 @@ executable concur-replica-calc
   build-depends:
       aeson
     , base >=4.7 && <5
+    , byteorder
     , bytestring
     , chronos
     , co-log
@@ -75,6 +80,8 @@ executable concur-replica-calc
     , concur-replica
     , containers
     , free >=4.12
+    , http-types
+    , network
     , replica
     , text
     , torsor
@@ -95,6 +102,7 @@ executable concur-replica-hilo
   build-depends:
       aeson
     , base >=4.7 && <5
+    , byteorder
     , bytestring
     , chronos
     , co-log
@@ -102,6 +110,8 @@ executable concur-replica-hilo
     , concur-replica
     , containers
     , free >=4.12
+    , http-types
+    , network
     , random
     , replica
     , text
@@ -123,6 +133,7 @@ executable concur-replica-menu
   build-depends:
       aeson
     , base >=4.7 && <5
+    , byteorder
     , bytestring
     , chronos
     , co-log
@@ -130,6 +141,8 @@ executable concur-replica-menu
     , concur-replica
     , containers
     , free >=4.12
+    , http-types
+    , network
     , replica
     , text
     , torsor
@@ -150,6 +163,7 @@ executable concur-replica-misc
   build-depends:
       aeson
     , base >=4.7 && <5
+    , byteorder
     , bytestring
     , chronos
     , co-log
@@ -157,6 +171,8 @@ executable concur-replica-misc
     , concur-replica
     , containers
     , free >=4.12
+    , http-types
+    , network
     , replica
     , text
     , torsor
@@ -177,6 +193,7 @@ executable concur-replica-multi-entry
   build-depends:
       aeson
     , base >=4.7 && <5
+    , byteorder
     , bytestring
     , chronos
     , co-log
@@ -184,7 +201,9 @@ executable concur-replica-multi-entry
     , concur-replica
     , containers
     , free >=4.12
+    , http-types
     , mtl
+    , network
     , replica
     , text
     , torsor

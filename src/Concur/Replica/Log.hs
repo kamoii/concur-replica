@@ -4,10 +4,10 @@ module Concur.Replica.Log
   , format
   ) where
 
-import qualified Colog            as Co
-import qualified Chronos          as Ch
-import qualified Replica.Run.Log  as R
-import qualified Data.Text        as T
+import qualified Colog                 as Co
+import qualified Chronos               as Ch
+import qualified Replica.Run.Log       as R
+import qualified Data.Text             as T
 
 data Log
   = Greeting T.Text
