@@ -33,9 +33,10 @@ import           Replica.VDOM                    (fireEvent, defaultIndex)
 import           Replica.VDOM.Types              (DOMEvent(DOMEvent), HTML)
 
 import           Network.WebSockets.Connection   (ConnectionOptions, defaultConnectionOptions)
-import           Network.Wai                     (Middleware)
+import qualified Network.HTTP.Types              as H
+import qualified Network.Wai                     as W
 import qualified Network.Wai.Handler.Replica     as R
-import qualified Network.Wai.Handler.Warp        as W
+import qualified Network.Wai.Handler.Warp        as Warp
 import qualified Network.Wai.Middleware.Logging  as ML
 import qualified Replica.Run.Types               as R
 
@@ -54,7 +55,7 @@ data Config res = Config
   , cfgTitle                   :: T.Text
   , cfgHeader                  :: HTML
   , cfgWSConnectionOptions     :: ConnectionOptions
-  , cfgMiddleware              :: Middleware
+  , cfgMiddleware              :: W.Middleware
   , cfgLogAction               :: Co.LogAction IO (Ch.Time, L.Log)
   , cfgWSInitialConnectLimit   :: Ch.Timespan      -- ^ Time limit for first connect
   , cfgWSReconnectionSpanLimit :: Ch.Timespan      -- ^ limit for re-connecting span
@@ -92,7 +93,7 @@ mkDefaultConfig port title =
 run :: Config res -> (res -> Widget HTML a) -> IO ()
 run cfg@Config{cfgPort, cfgLogAction} initial = R.app (rcfg cfg) $ \app -> do
   greetLog <& terminalLogo <> "\nListening port=" <> T.pack (show cfgPort)
-  W.run cfgPort app
+  Warp.run cfgPort app
   where
     tagTime a = (,) <$> Ch.now <*> pure a
     greetLog = Co.cmap L.Greeting $ Co.cmapM tagTime cfgLogAction
@@ -105,7 +106,7 @@ run cfg@Config{cfgPort, cfgLogAction} initial = R.app (rcfg cfg) $ \app -> do
       { R.cfgTitle                    = cfgTitle
       , R.cfgHeader                   = cfgHeader
       , R.cfgWSConnectionOptions      = cfgWSConnectionOptions
-      , R.cfgMiddleware               = cfgMiddleware . ML.loggingApacheLike (waiLog<&)
+      , R.cfgMiddleware               = ML.loggingApacheLike (waiLog<&) . cfgMiddleware
       , R.cfgLogAction                = Co.cmap (fmap L.ReplicaLog) cfgLogAction
       , R.cfgWSInitialConnectLimit    = cfgWSInitialConnectLimit
       , R.cfgWSReconnectionSpanLimit  = cfgWSReconnectionSpanLimit
