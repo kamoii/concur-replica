@@ -1,94 +1,96 @@
-{-# LANGUAGE ConstraintKinds     #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Concur.Replica.DOM where
 
-import           Control.Concurrent       (newEmptyMVar, putMVar, takeMVar)
+import Control.Concurrent (newEmptyMVar, putMVar, takeMVar)
+import Control.ShiftMap (ShiftMap (shiftMap))
+import qualified Data.Map as M
+import Data.Monoid ((<>))
+import qualified Data.Text as T
 
-import           Concur.Core              (Widget, MonadSafeBlockingIO(liftSafeBlockingIO), MonadUnsafeBlockingIO(liftUnsafeBlockingIO), MultiAlternative, wrapView, orr, display)
-import           Concur.Replica.Props     (Props(Props), Prop(PropText, PropBool, PropEvent, PropMap), key)
+import Concur.Core (MonadSafeBlockingIO (liftSafeBlockingIO), MonadUnsafeBlockingIO (liftUnsafeBlockingIO), MultiAlternative, Widget, display, orr, wrapView)
+import Concur.Replica.Props (Prop (PropBool, PropEvent, PropMap, PropText), Props (Props), key)
+import Replica.VDOM (Attr (ABool, AEvent, AMap, AText), DOMEvent, HTML, VDOM (VNode, VText))
 
-import           Control.ShiftMap         (ShiftMap(shiftMap))
-
-import           Data.Monoid              ((<>))
-import qualified Data.Text                as T
-
-import qualified Data.Map                 as M
-
-import           Replica.VDOM             (Attr(AText, ABool, AEvent, AMap), HTML, DOMEvent, VDOM(VNode, VText))
-
-type WidgetConstraints m = (ShiftMap (Widget HTML) m, Monad m, MonadSafeBlockingIO m, MonadUnsafeBlockingIO m, MultiAlternative m)
+type WidgetConstraints m =
+    ( ShiftMap (Widget HTML) m
+    , Monad m
+    , MonadSafeBlockingIO m
+    , MonadUnsafeBlockingIO m
+    , MultiAlternative m
+    )
 
 el :: forall m a. WidgetConstraints m => T.Text -> [Props a] -> [m a] -> m a
 el e attrs children = do
-  attrs' <- liftUnsafeBlockingIO $ mapM toAttr attrs
-  shiftMap (wrapView (VNode e (M.fromList $ fmap fst attrs'))) $ orr (children <> concatMap snd attrs')
+    attrs' <- liftUnsafeBlockingIO $ mapM toAttr attrs
+    shiftMap (wrapView (VNode e (M.fromList $ fmap fst attrs'))) $ orr (children <> concatMap snd attrs')
   where
     toAttr :: Props a -> IO ((T.Text, Attr), [m a])
     toAttr (Props k (PropText v)) = pure ((k, AText v), [])
     toAttr (Props k (PropBool v)) = pure ((k, ABool v), [])
     toAttr (Props k (PropEvent extract)) = do
-      n <- newEmptyMVar
-      pure ((k, AEvent $ putMVar n), [liftSafeBlockingIO (extract <$> takeMVar n)])
+        n <- newEmptyMVar
+        pure ((k, AEvent $ putMVar n), [liftSafeBlockingIO (extract <$> takeMVar n)])
     toAttr (Props k (PropMap m)) = do
-      m' <- mapM toAttr m
-      pure ((k, AMap $ M.fromList $ fmap fst m'), concatMap snd m')
+        m' <- mapM toAttr m
+        pure ((k, AMap $ M.fromList $ fmap fst m'), concatMap snd m')
 
 text :: T.Text -> Widget HTML a
 text txt = display [VText txt]
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/div
 div :: WidgetConstraints m => [Props a] -> [m a] -> m a
-div  = el "div"
+div = el "div"
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table
 table :: WidgetConstraints m => [Props a] -> [m a] -> m a
-table  = el "table"
+table = el "table"
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
 thead :: WidgetConstraints m => [Props a] -> [m a] -> m a
-thead  = el "thead"
+thead = el "thead"
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tbody
 tbody :: WidgetConstraints m => [Props a] -> [m a] -> m a
-tbody  = el "tbody"
+tbody = el "tbody"
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tr
 tr :: WidgetConstraints m => [Props a] -> [m a] -> m a
-tr  = el "tr"
+tr = el "tr"
 
--- | Contains `Key`, inteded to be used for child replacement patch
---
--- <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tr>
+{- | Contains `Key`, inteded to be used for child replacement patch
 
+ <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tr>
+-}
 trKeyed :: WidgetConstraints m => T.Text -> [Props a] -> [m a] -> m a
-trKeyed k props = el "tr" (key k:props)
+trKeyed k props = el "tr" (key k : props)
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/th
 th :: WidgetConstraints m => [Props a] -> [m a] -> m a
-th  = el "th"
+th = el "th"
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/td
 td :: WidgetConstraints m => [Props a] -> [m a] -> m a
-td  = el "td"
+td = el "td"
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tfoot
 tfoot :: WidgetConstraints m => [Props a] -> [m a] -> m a
-tfoot  = el "tfoot"
+tfoot = el "tfoot"
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/section
 section :: WidgetConstraints m => [Props a] -> [m a] -> m a
-section  = el "section"
+section = el "section"
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/header
 header :: WidgetConstraints m => [Props a] -> [m a] -> m a
-header  = el "header"
+header = el "header"
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/footer
 footer :: WidgetConstraints m => [Props a] -> [m a] -> m a
-footer  = el "footer"
+footer = el "footer"
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button
 button :: WidgetConstraints m => [Props a] -> [m a] -> m a
@@ -122,12 +124,12 @@ strong = el "strong"
 li :: WidgetConstraints m => [Props a] -> [m a] -> m a
 li = el "li"
 
--- | Contains `Key`, inteded to be used for child replacement patch
---
--- <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/li>
---
+{- | Contains `Key`, inteded to be used for child replacement patch
+
+ <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/li>
+-}
 liKeyed :: WidgetConstraints m => T.Text -> [Props a] -> [m a] -> m a
-liKeyed k props = el "li" (key k:props)
+liKeyed k props = el "li" (key k : props)
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/h1
 h1 :: WidgetConstraints m => [Props a] -> [m a] -> m a
