@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE FlexibleContexts     #-}
 
 module Main where
 
@@ -26,7 +27,7 @@ doubleMenu label1 label2 items f = menu1 >>= go
 
 -- A simple select menu
 menuWidget :: T.Text -> MenuItems a -> Widget HTML a
-menuWidget label items = div [className "menu"] 
+menuWidget label items = div [className "menu"]
   [ do
       button [onClick] [text label]
       orr $ map menuButton items
