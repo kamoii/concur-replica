@@ -6,18 +6,17 @@
 module Concur.Replica.DOM where
 
 import Control.Concurrent (newEmptyMVar, putMVar, takeMVar)
-import Control.ShiftMap (ShiftMap (shiftMap))
 import qualified Data.Map as M
 import Data.Monoid ((<>))
 import qualified Data.Text as T
 
-import Concur.Core (MonadSafeBlockingIO (liftSafeBlockingIO), MonadUnsafeBlockingIO (liftUnsafeBlockingIO), MultiAlternative, Widget, display, orr, wrapView)
+import Concur.Core (MonadSafeBlockingIO (liftSafeBlockingIO), MonadUnsafeBlockingIO (liftUnsafeBlockingIO), MonadView (mapView), MultiAlternative, Widget, display, orr, wrapView)
 import Concur.Replica.Props (Prop (PropBool, PropEvent, PropMap, PropText), Props (Props), key)
 import Replica.VDOM (Attr (ABool, AEvent, AMap, AText), DOMEvent, HTML, VDOM (VNode, VText))
 
 type WidgetConstraints m =
-    ( ShiftMap (Widget HTML) m
-    , Monad m
+    ( Monad m
+    , MonadView HTML m
     , MonadSafeBlockingIO m
     , MonadUnsafeBlockingIO m
     , MultiAlternative m
@@ -26,7 +25,7 @@ type WidgetConstraints m =
 el :: forall m a. WidgetConstraints m => T.Text -> [Props a] -> [m a] -> m a
 el e attrs children = do
     attrs' <- liftUnsafeBlockingIO $ mapM toAttr attrs
-    shiftMap (wrapView (VNode e (M.fromList $ fmap fst attrs'))) $ orr (children <> concatMap snd attrs')
+    mapView (pure . VNode e (M.fromList $ fmap fst attrs')) $ orr (children <> concatMap snd attrs')
   where
     toAttr :: Props a -> IO ((T.Text, Attr), [m a])
     toAttr (Props k (PropText v)) = pure ((k, AText v), [])
