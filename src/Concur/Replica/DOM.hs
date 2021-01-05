@@ -37,7 +37,7 @@ el e attrs children = do
         m' <- mapM toAttr m
         pure ((k, AMap $ M.fromList $ fmap fst m'), concatMap snd m')
 
-text :: T.Text -> Widget HTML a
+text :: MonadView HTML m => T.Text -> m a
 text txt = display [VText txt]
 
 -- | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/div
