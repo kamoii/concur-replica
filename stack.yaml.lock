@@ -9,12 +9,12 @@ packages:
     version: 0.1.0.0
     git: /home/sino/mygithub/replica
     pantry-tree:
-      size: 1713
-      sha256: 56c2a4d607f67263c6f802b7e0a75927c4086f6f032a306b1aeafab0b42c0f85
-    commit: 6f5573f8336be5bc6b8ed80aac31c0e3e738e7bb
+      size: 1714
+      sha256: 3403025fed718b6737dc0546213091bb7abc40ae2701e6f5939f808d43bae4e2
+    commit: 6fe5caf2743f2912b7ae5eb0c13df4f1d5974319
   original:
     git: /home/sino/mygithub/replica
-    commit: 6f5573f8336be5bc6b8ed80aac31c0e3e738e7bb
+    commit: 6fe5caf2743f2912b7ae5eb0c13df4f1d5974319
 - completed:
     subdir: concur-core
     name: concur-core
@@ -22,12 +22,12 @@ packages:
     git: /home/sino/mygithub/concur
     pantry-tree:
       size: 837
-      sha256: 90cae48abdec0266f3038ba07af09ec4cc25c5bf13e9515c091132871923cfca
-    commit: 0eb18af73890126da7c316c88b50a6ea4283e426
+      sha256: 6e7211abf923e5e7a88071cfa3ae2be7d80f0e178c1a67d01dc7e3bb1914489b
+    commit: 8d88358b94f07943760ed37e1df8e189ae5b54e5
   original:
     subdir: concur-core
     git: /home/sino/mygithub/concur
-    commit: 0eb18af73890126da7c316c88b50a6ea4283e426
+    commit: 8d88358b94f07943760ed37e1df8e189ae5b54e5
 - completed:
     hackage: hex-text-0.1.0.2@sha256:154df2b81c1dd38b055fa6a90cb6964f60c5cf4a0ba633ea929d8a79af89519a,1301
     pantry-tree:
