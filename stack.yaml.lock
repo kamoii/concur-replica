@@ -21,13 +21,13 @@ packages:
     version: 0.1.0.0
     git: /home/sino/mygithub/concur
     pantry-tree:
-      size: 835
-      sha256: b1853d64fee29fe30febae5f1e7db202ad3681175cb29c28b8441ac154429e73
-    commit: bda7e91e9c2bad9a8b6e325fd9a011944374fe35
+      size: 837
+      sha256: 90cae48abdec0266f3038ba07af09ec4cc25c5bf13e9515c091132871923cfca
+    commit: 0eb18af73890126da7c316c88b50a6ea4283e426
   original:
     subdir: concur-core
     git: /home/sino/mygithub/concur
-    commit: bda7e91e9c2bad9a8b6e325fd9a011944374fe35
+    commit: 0eb18af73890126da7c316c88b50a6ea4283e426
 - completed:
     hackage: hex-text-0.1.0.2@sha256:154df2b81c1dd38b055fa6a90cb6964f60c5cf4a0ba633ea929d8a79af89519a,1301
     pantry-tree:
