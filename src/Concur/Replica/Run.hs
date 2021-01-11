@@ -12,12 +12,9 @@ module Concur.Replica.Run (
 import qualified Chronos as Ch
 import Colog ((<&))
 import qualified Colog as Co
-import Concur.Core (ResourceT, SuspendF (Forever, StepBlock, StepIO, StepView), Widget (unWidget), display, orr)
+import Concur.Core (ResourceT, Widget (unWidget), WidgetStream (WidgetResult, WidgetTerminate, WidgetView), display, orr, widgetStream)
 import qualified Concur.Replica.Log as L
-import qualified Torsor as Tr
-
-import Control.Monad.Free (Free (Free, Pure))
-
+import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Aeson ((.:), (.=))
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Char8 as BC
@@ -26,12 +23,6 @@ import qualified Data.Map as M
 import Data.Maybe (fromMaybe, mapMaybe)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import Unsafe.Coerce (unsafeCoerce)
-
-import Replica.VDOM (defaultIndex, fireEvent)
-import qualified Replica.VDOM as V
-import Replica.VDOM.Types (DOMEvent (DOMEvent), HTML)
-
 import qualified Network.HTTP.Types as H
 import qualified Network.Wai as W
 import qualified Network.Wai.Handler.Replica as R
@@ -39,18 +30,34 @@ import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Middleware.Logging as ML
 import Network.WebSockets.Connection (ConnectionOptions, defaultConnectionOptions)
 import qualified Replica.Run.Types as R
-
-import Control.Monad.IO.Class (MonadIO (liftIO))
+import Replica.VDOM (defaultIndex, fireEvent)
+import qualified Replica.VDOM as V
+import Replica.VDOM.Types (DOMEvent (DOMEvent), HTML)
+import qualified Torsor as Tr
+import Unsafe.Coerce (unsafeCoerce)
 
 stepWidget ::
-    Free (SuspendF HTML) a ->
-    ResourceT IO (Maybe (HTML, Free (SuspendF HTML) a, R.Event -> Maybe (IO ())))
-stepWidget v = case v of
-    Pure a -> pure Nothing
-    Free (StepView new next) -> pure $ Just (new, next, \event -> fireEvent new (R.evtPath event) (R.evtType event) (DOMEvent $ R.evtEvent event))
-    Free (StepIO io) -> io >>= stepWidget
-    Free (StepBlock _ io) -> liftIO io >>= stepWidget
-    Free Forever -> pure Nothing
+    ResourceT IO (WidgetStream HTML a) ->
+    ResourceT
+        IO
+        ( Maybe
+            ( HTML
+            , ResourceT IO (WidgetStream HTML a)
+            , R.Event -> Maybe (IO ())
+            )
+        )
+stepWidget s = do
+    r <- s
+    case r of
+        WidgetView view next ->
+            pure $
+                Just
+                    ( view
+                    , next
+                    , \event -> fireEvent view (R.evtPath event) (R.evtType event) (DOMEvent $ R.evtEvent event)
+                    )
+        WidgetResult _ -> pure Nothing
+        WidgetTerminate -> pure Nothing
 
 data Config = Config
     { cfgPort :: Int
@@ -82,7 +89,7 @@ mkDefaultConfig port title =
         }
 
 run :: Config -> Widget HTML a -> IO ()
-run cfg@Config{cfgPort, cfgLogAction} initial = R.app (rcfg cfg) $ \app -> do
+run cfg@Config{cfgPort, cfgLogAction} widget = R.app (rcfg cfg) $ \app -> do
     greetLog <& terminalLogo <> "\nListening port=" <> T.pack (show cfgPort)
     Warp.run cfgPort app
   where
@@ -102,7 +109,7 @@ run cfg@Config{cfgPort, cfgLogAction} initial = R.app (rcfg cfg) $ \app -> do
             , R.cfgLogAction = Co.cmap (fmap L.ReplicaLog) cfgLogAction
             , R.cfgWSInitialConnectLimit = cfgWSInitialConnectLimit
             , R.cfgWSReconnectionSpanLimit = cfgWSReconnectionSpanLimit
-            , R.cfgInitial = pure $ unWidget initial
+            , R.cfgInitial = pure $ widgetStream widget
             , R.cfgStep = stepWidget
             }
 
