@@ -38,24 +38,11 @@ import Unsafe.Coerce (unsafeCoerce)
 
 stepWidget ::
     ResourceT IO (WidgetStream HTML a) ->
-    ResourceT
-        IO
-        ( Maybe
-            ( HTML
-            , ResourceT IO (WidgetStream HTML a)
-            , R.Event -> Maybe (IO ())
-            )
-        )
+    ResourceT IO (Maybe (HTML, ResourceT IO (WidgetStream HTML a)))
 stepWidget s = do
     r <- s
     case r of
-        WidgetView view next ->
-            pure $
-                Just
-                    ( view
-                    , next
-                    , \event -> fireEvent view (R.evtPath event) (R.evtType event) (DOMEvent $ R.evtEvent event)
-                    )
+        WidgetView view next -> pure $ Just (view, next)
         WidgetResult _ -> pure Nothing
         WidgetTerminate -> pure Nothing
 
