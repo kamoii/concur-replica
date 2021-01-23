@@ -81,3 +81,8 @@ executables:
     - concur-replica
     - mtl
     - text
+  concur-replica-form:
+    main: Main.hs
+    source-dirs: examples/Form
+    dependencies:
+    - concur-replica
