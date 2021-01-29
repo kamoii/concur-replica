@@ -1,6 +1,6 @@
 module Concur.Replica.JS where
 
-import Concur.Core (MonadThrow)
+import Concur.Core (MonadThrow (throwM))
 import Control.Exception (Exception)
 import Control.Monad (void)
 import Data.Aeson (FromJSON, Result (Error, Success), ToJSON, Value, fromJSON)
