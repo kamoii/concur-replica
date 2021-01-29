@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f57a1f29afc21cb6ea4dea0d378a00f92dd9072b263d714e76bec08a5b1089ed
+-- hash: ef1da2e7ce774418d9f8624f7a20796a82f4ad226189f8cef8f1bbf2f20b2021
 
 name:           concur-replica
 version:        0.1.0.0
@@ -35,6 +35,7 @@ library
       Concur.Replica.Log
       Concur.Replica.Run
   other-modules:
+      Concur.Replica.JS
       Network.Wai.Middleware.Logging
       Paths_concur_replica
   hs-source-dirs:

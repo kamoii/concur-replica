@@ -6,12 +6,13 @@
 
 module Main where
 
-import Prelude hiding (div)
 import Concur.Core (MultiAlternative (orr))
 import Concur.Replica
 import Control.Applicative (Alternative ((<|>)))
 import Control.Concurrent (threadDelay)
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import Data.Text (pack)
+import Prelude hiding (div)
 
 -- Form's show case
 -- https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
@@ -23,24 +24,23 @@ waitFor n = liftIO $ threadDelay (n * 1_000_000)
 inputTextWidget t = do
     ev <-
         orr
-            [ div [] [ input [type_ "text", value t, onChange] ]
-            , div [] [ text t ]
+            [ div [] [input [type_ "text", value t, onChange]]
+            , div [] [text t]
             ]
     inputTextWidget (extract ev)
   where
     extract BaseEvent{target = Target{targetValue}} = targetValue
--- * TODO input Checkbox
 
--- * TODO input Radiobutton
-
--- * TODO TextArea
-
--- * TODO Select
-
--- * TODO File
+inputFileWidget = do
+    ev <- input [type_ "file", onChange]
+    text $ "foo"
+    pure ()
 
 main :: IO ()
 main = do
     runDefault 8080 "Form" $ do
-        inputTextWidget "foo"
+        orr
+            [ inputTextWidget "foo"
+            , inputFileWidget
+            ]
         pure ()
