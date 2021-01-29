@@ -1,12 +1,19 @@
 module Concur.Replica.JS where
 
 import Concur.Core (MonadThrow)
+import Control.Exception (Exception)
+import Control.Monad (void)
+import Data.Aeson (FromJSON, Result (Error, Success), ToJSON, Value, fromJSON)
 import Data.Text (Text)
-import Data.Aeson (FromJSON)
 
 newtype JSCode = JSCode Text
 
-newtype JSExcetion = JSExcetion Text
+data JSException
+    = JSException Text
+    | JSResultDecodingError String
+    deriving (Show)
+
+instance Exception JSException
 
 -- Has the same semantics as liftIO in concur.
 --
@@ -14,17 +21,33 @@ newtype JSExcetion = JSExcetion Text
 --  * mempty view is displayed
 --  * Propre cleanup when cancelled.
 --
-class MonadThrow m => MonadJS m where
-    -- liftJS :: JSCode -> m ()
+class MonadThrow m => MonadJS m
+
+-- liftJS :: JSCode -> m ()
 
 -- Has the same semantics as liftUnsafeBlockingJS in concur.
 --
 --  * Might freeze the whole application indefinatelly.
 --  * If the functions raises exception, JSException will be throwned.
+--  * JS code must be a function thats returns a json-serializeble value.
+--    Shouldn't fork any async code, since there is now way to safely cancell it.
 --
 -- Example:
---    
---   liftUnsafeBlockingJS $ JSCode "function(arg) { ....; return val }"
+--
+--   liftUnsafeBlockingJS $ JSCode "function() { ....; return val }"
 --
 class MonadThrow m => MonadUnsafeBlockiingJS m where
-    liftUnsafeBlockingJS :: FromJSON a => JSCode -> m a
+    liftUnsafeBlockingJS' :: JSCode -> m Value
+
+liftUnsafeBlockingJS_ :: MonadUnsafeBlockiingJS m => JSCode -> m ()
+liftUnsafeBlockingJS_ = void . liftUnsafeBlockingJS'
+
+liftUnsafeBlockingJS ::
+    (FromJSON v, MonadUnsafeBlockiingJS m) =>
+    JSCode ->
+    m v
+liftUnsafeBlockingJS jscode = do
+    value <- liftUnsafeBlockingJS' jscode
+    case fromJSON value of
+        Error str -> throwM $ JSResultDecodingError str
+        Success a -> pure a
